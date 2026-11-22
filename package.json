@@ -1,0 +1,14 @@
+{
+  "name": "audit-ready",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@forge/api": "^5.0.0",
+    "@forge/bridge": "^4.0.0",
+    "@forge/react": "^11.0.0",
+    "@forge/resolver": "^1.6.0",
+    "react": "^18.2.0"
+  }
+}
