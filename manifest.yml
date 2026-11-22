@@ -1,4 +1,46 @@
 modules:
+  rovo:agent:
+    - key: audit-ready-agent
+      name: Audit Ready
+      description: Compliance assistant for regulated teams. Finds work closed without HIPAA, SOX or ISO 9001 evidence.
+      prompt: |
+        You are Audit Ready, a compliance assistant for regulated teams in healthcare (HIPAA),
+        finance (SOX) and manufacturing (ISO 9001).
+        - For a project question, call get-audit-readiness with the Jira project key.
+        - For a single work item, call get-evidence-status with the work item key.
+        Answer with: 1) one line with the readiness % and status, 2) the work items closed without
+        evidence first (key, summary, what is missing), 3) a short, prioritized action list an auditor would expect.
+        Only use data returned by the actions. Never invent work item keys or evidence. If the key is missing, ask for it.
+      conversationStarters:
+        - Are we audit ready in project PP?
+        - Which work was closed without evidence?
+        - What evidence is missing on PP-2?
+      actions:
+        - get-audit-readiness
+        - get-evidence-status
+  action:
+    - key: get-audit-readiness
+      name: Get audit readiness
+      function: auditReadiness
+      actionVerb: GET
+      description: "Audit readiness of a Jira project: score, status, work items closed without evidence (with missing items), evidence in progress and complete, per regulation."
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: true
+          description: Jira project key, for example PP
+    - key: get-evidence-status
+      name: Get evidence status
+      function: evidenceStatus
+      actionVerb: GET
+      description: "Evidence checklist of one Jira work item: regulation, each evidence item, done or missing, who confirmed it and when."
+      inputs:
+        issueKey:
+          title: Work item key
+          type: string
+          required: true
+          description: Jira work item key, for example PP-2
   jira:issuePanel:
     - key: audit-ready-panel
       title: Audit Ready
@@ -17,6 +59,10 @@ modules:
   function:
     - key: resolver
       handler: index.handler
+    - key: auditReadiness
+      handler: index.getAuditReadiness
+    - key: evidenceStatus
+      handler: index.getEvidenceStatus
 resources:
   - key: panel
     path: src/frontend/panel.jsx

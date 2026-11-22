@@ -77,8 +77,9 @@ resolver.define('toggleItem', async ({ payload, context }) => {
   return view(key, { ...cur, state });
 });
 
-resolver.define('getProject', async ({ context }) => {
-  const pkey = context.extension.project.key;
+async function computeProject(pkey) {
+  pkey = String(pkey || '').trim().toUpperCase();
+  if (!/^[A-Z][A-Z0-9_]{1,19}$/.test(pkey)) throw new Error('projectKey is required, e.g. PP');
   const jql = `project = "${pkey}" AND labels in (${LABELS.join(',')}) ORDER BY updated DESC`;
   let rows = [], token;
   do {
@@ -93,6 +94,30 @@ resolver.define('getProject', async ({ context }) => {
     token = d.nextPageToken;
   } while (token && rows.length < 500);
   return { project: pkey, ...projectReadiness(rows) };
-});
+}
 
-module.exports = { handler: resolver.getDefinitions() };
+resolver.define('getProject', async ({ context }) => computeProject(context.extension.project.key));
+
+// Rovo actions
+const slim = (r) => ({ key: r.key, summary: r.summary, checklist: r.template, evidence: `${r.done}/${r.total}`, closed: r.closed, missing: r.missing });
+async function getAuditReadiness(payload) {
+  try {
+    const d = await computeProject(payload.projectKey);
+    return { project: d.project, readinessPercent: d.score, status: d.status, regulatedItems: d.issues.length,
+      byRegulation: Object.values(d.byTemplate),
+      closedWithoutEvidence: d.closedWithoutEvidence.map(slim), inProgress: d.inProgress.map(slim).slice(0, 20),
+      complete: d.complete.map(r => r.key) };
+  } catch (e) { return { error: e.message }; }
+}
+async function getEvidenceStatus(payload) {
+  try {
+    const key = String(payload.issueKey || '').trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9_]+-\d+$/.test(key)) throw new Error('issueKey is required, e.g. PP-1');
+    const v = view(key, await loadIssue(key));
+    if (!v.template) return { key, checklist: null, note: 'No compliance checklist on this work item (label it hipaa, sox or iso9001).' };
+    return { key, checklist: v.templateName, closed: v.closed, evidence: `${v.done}/${v.total}`,
+      items: v.items.map(i => ({ item: i.label, done: !!i.done, confirmedBy: i.by || null, on: i.at ? i.at.slice(0, 10) : null })) };
+  } catch (e) { return { error: e.message }; }
+}
+
+module.exports = { handler: resolver.getDefinitions(), getAuditReadiness, getEvidenceStatus };

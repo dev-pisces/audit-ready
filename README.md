@@ -4,9 +4,10 @@ Healthcare, finance and manufacturing teams must prove that every regulated chan
 
 - **Issue panel:** a built-in evidence checklist for **HIPAA** (healthcare), **SOX** (finance) or **ISO 9001** (manufacturing). It picks the checklist from the label (`hipaa`, `sox`, `iso9001`) or you choose one. Every check records who confirmed it and when, and an audit trail shows the history. Closed work items with missing evidence get a red warning.
 - **Project page "Audit Readiness":** readiness score, status (AUDIT READY / IN PROGRESS / AUDIT RISK) and a "Fix first" list of work items **closed without evidence**, plus progress per regulation.
+- **Rovo agent "Audit Ready":** ask *"Are we audit ready in project PP?"* or *"What evidence is missing on PP-2?"*. Two Forge actions return the real readiness data, and the agent answers with the status, the work closed without evidence and a prioritized action list.
 - **Data stays in Jira:** evidence is stored as an issue property on the work item. No external storage, no external calls.
 
-Built for Codegeist 2026 (Apps for Specialized Industries).
+Built for Codegeist 2026 (Apps for Specialized Industries + Rovo agent).
 
 ## Develop
 ```
