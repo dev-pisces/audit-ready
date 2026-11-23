@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import ForgeReconciler, { Stack, Inline, Text, Heading, Lozenge, Checkbox, ProgressBar, Button,
+import ForgeReconciler, { Stack, Inline, Text, Heading, Lozenge, Checkbox, ProgressBar, Button, User,
   SectionMessage, Spinner, Strong, Box, xcss } from '@forge/react';
 import { invoke } from '@forge/bridge';
 
+const isId = (s) => typeof s === 'string' && /^[0-9a-f]{6,}:|^[0-9a-f]{24}$/.test(s);
+const Who = ({ v }) => (isId(v) ? <User accountId={v} /> : <Text>{v}</Text>);
 const when = (iso) => (iso ? new Date(iso).toISOString().slice(0, 10) : '');
 
 const App = () => {
@@ -10,6 +12,7 @@ const App = () => {
   const run = (name, payload) => { setBusy(true); setErr(null);
     invoke(name, payload).then(setD).catch(e => setErr(String(e.message || e))).finally(() => setBusy(false)); };
   useEffect(() => run('getIssue'), []);
+  if (!d && err) return <SectionMessage appearance="warning"><Text>{err}</Text></SectionMessage>;
   if (!d) return <Spinner label="Loading checklist" />;
   if (!d.template) return (
     <Stack space="space.150">
@@ -35,12 +38,12 @@ const App = () => {
         <Stack key={i.id} space="space.0">
           <Checkbox label={i.label} isChecked={!!i.done} isDisabled={busy}
             onChange={() => run('toggleItem', { id: i.id, done: !i.done })} />
-          {i.done && i.by && <Box xcss={xcss({ paddingInlineStart: 'space.300' })}><Text size="small">Confirmed by {i.by} on {when(i.at)}</Text></Box>}
+          {i.done && i.by && <Box xcss={xcss({ paddingInlineStart: 'space.300' })}><Inline space="space.050" alignBlock="center"><Text size="small">Confirmed by</Text><Who v={i.by} /><Text size="small">on {when(i.at)}</Text></Inline></Box>}
         </Stack>))}
       {d.history.length > 0 && (
         <Stack space="space.050">
           <Strong>Audit trail</Strong>
-          {d.history.map((h, n) => <Text key={n} size="small">{when(h.at)} · {h.by} {h.done ? 'confirmed' : 'unchecked'} “{(d.items.find(i => i.id === h.id) || {}).label}”</Text>)}
+          {d.history.map((h, n) => <Inline key={n} space="space.050" alignBlock="center" shouldWrap><Text size="small">{when(h.at)} ·</Text><Who v={h.by} /><Text size="small">{h.done ? 'confirmed' : 'unchecked'} “{(d.items.find(i => i.id === h.id) || {}).label}”</Text></Inline>)}
         </Stack>)}
     </Stack>);
 };
